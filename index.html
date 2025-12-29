@@ -43,8 +43,7 @@
     .key.equals { grid-column: span 2; background: var(--accent-strong); color:#fff; font-weight:700; }
     .key:active { transform: translateY(1px); }
 
-    .container.off { opacity: 0.65; }
-    .key.disabled { pointer-events: none; opacity: 0.45; }
+    .hidden { display: none !important; }
 
   </style>
 </head>
@@ -53,7 +52,7 @@
     <div class="header">
       <h1>수식 계산기</h1>
       <div style="display:flex; gap:8px; align-items:center;">
-        <button id="powerBtn" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); background:var(--accent); color:#fff; cursor:pointer;">ON</button>
+        <button id="modeBtn" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); background:var(--accent); color:#fff; cursor:pointer;">Mode: ENG</button>
         <label class="theme-toggle"><input id="themeToggle" type="checkbox" /> 다크 모드</label>
       </div>
     </div>
@@ -209,20 +208,14 @@
       if (e.key === 'Enter') calculate();
     });
 
-    // 전원 버튼 동작: 켜기/끄기
-    const powerBtn = document.getElementById('powerBtn');
-    let powerOn = true;
-    function updatePowerUI(){
-      const keys = document.querySelectorAll('.key');
-      const expr = document.getElementById('expr');
-      keys.forEach(k=> k.classList.toggle('disabled', !powerOn));
-      expr.disabled = !powerOn;
-      document.querySelector('.container').classList.toggle('off', !powerOn);
-      powerBtn.textContent = powerOn ? 'ON' : 'OFF';
-      // 결과 초기화 when off
-      if (!powerOn) document.getElementById('result').textContent = '';
+    // 모드 버튼: Engineering <-> Standard 전환
+    const modeBtn = document.getElementById('modeBtn');
+    let engMode = true; // true: engineering (show function keys), false: standard
+    function updateModeUI(){
+      document.querySelectorAll('.key.function').forEach(k=> k.classList.toggle('hidden', !engMode));
+      modeBtn.textContent = engMode ? 'Mode: ENG' : 'Mode: STD';
     }
-    powerBtn.addEventListener('click', ()=>{ powerOn = !powerOn; updatePowerUI(); });
+    modeBtn.addEventListener('click', ()=>{ engMode = !engMode; updateModeUI(); });
 
     // 각도 모드 토글 (RAD / DEG)
     const angleBtn = document.getElementById('angleBtn');
@@ -234,7 +227,7 @@
     });
     // 초기 설정
     Calc.setAngleMode(angleMode);
-    updatePowerUI();
+    updateModeUI();
   </script>
 </body>
 </html>

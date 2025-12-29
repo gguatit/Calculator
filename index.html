@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>복잡한 수식 계산기</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
+    .container { max-width: 400px; margin: 60px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px #0001; padding: 32px 24px; }
+    h1 { text-align: center; color: #3a3a3a; }
+    input, button { width: 100%; font-size: 1.2em; margin: 8px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #4f8cff; color: #fff; border: none; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #2563eb; }
+    .result { margin-top: 18px; font-size: 1.3em; color: #2563eb; text-align: center; min-height: 1.5em; }
+    .error { color: #e11d48; }
+    .info { font-size: 0.95em; color: #888; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>수식 계산기</h1>
+    <input id="expr" type="text" placeholder="예: (2+3)*sin(1.5)-sqrt(9)/2" autocomplete="off" />
+    <button onclick="calculate()">계산</button>
+    <div class="result" id="result"></div>
+    <div class="info">sin, cos, tan, sqrt, pow, log, abs 등 다양한 수학 함수를 지원합니다.</div>
+  </div>
+  <script>
+    // 안전하게 수식 평가 (math.js 없이 직접 구현)
+    function calculate() {
+      const input = document.getElementById('expr').value;
+      let expr = input
+        .replace(/\b(sin|cos|tan|sqrt|abs|log|pow|exp|floor|ceil|round|min|max)\b/gi, 'Math.$1')
+        .replace(/π|pi/gi, 'Math.PI')
+        .replace(/e/gi, 'Math.E');
+      try {
+        // eval은 위험하므로, 입력값을 최대한 math 함수로만 제한
+        if (/[^-+*/().,0-9 MathsincoqrtabslgpowexfloorceilroundminmaxPIE]/i.test(expr)) {
+          throw new Error('허용되지 않은 문자가 있습니다.');
+        }
+        const result = Function('return ' + expr)();
+        if (typeof result === 'number' && isFinite(result)) {
+          document.getElementById('result').innerHTML = result;
+        } else {
+          document.getElementById('result').innerHTML = '<span class="error">계산 불가</span>';
+        }
+      } catch (e) {
+        document.getElementById('result').innerHTML = '<span class="error">오류: ' + e.message + '</span>';
+      }
+    }
+    document.getElementById('expr').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') calculate();
+    });
+  </script>
+</body>
+</html>

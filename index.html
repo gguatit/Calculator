@@ -5,41 +5,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>복잡한 수식 계산기</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
-    .container { max-width: 400px; margin: 60px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px #0001; padding: 32px 24px; }
-    h1 { text-align: center; color: #3a3a3a; }
-    input, button { width: 100%; font-size: 1.2em; margin: 8px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-    button { background: #4f8cff; color: #fff; border: none; cursor: pointer; transition: background 0.2s; }
-    button:hover { background: #2563eb; }
-    .result { margin-top: 18px; font-size: 1.3em; color: #2563eb; text-align: center; min-height: 1.5em; }
-    .error { color: #e11d48; }
-    .info { font-size: 0.95em; color: #888; margin-top: 10px; text-align: center; }
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #6b7280;
+      --accent: #4f8cff;
+      --accent-strong: #2563eb;
+      --danger: #e11d48;
+    }
+    [data-theme="dark"] {
+      --bg: #0b1020;
+      --card: #0f1724;
+      --text: #e6eef8;
+      --muted: #9aa6bd;
+      --accent: #4f8cff;
+      --accent-strong: #60a5fa;
+      --danger: #ff7a93;
+    }
+    html,body { height:100%; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+    .container { max-width: 420px; margin: 48px auto; background: var(--card); border-radius: 12px; box-shadow: 0 8px 30px rgba(2,6,23,0.4); padding: 20px; }
+    .header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:1.25rem; color:var(--text); }
+    .theme-toggle { display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--muted); }
+    input[type="text"]#expr { width:100%; font-size:1.1rem; margin:10px 0 6px 0; padding:12px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); background:transparent; color:var(--text); box-sizing:border-box; }
+    .display-row { display:flex; gap:8px; }
+    .result { margin-top: 12px; font-size: 1.15rem; color: var(--accent-strong); text-align: right; min-height: 1.4em; }
+    .error { color: var(--danger); }
+    .info { font-size: 0.85em; color: var(--muted); margin-top: 10px; text-align: center; }
+
+    /* keypad */
+    .keypad { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:14px; }
+    .key { padding:14px; border-radius:8px; background: rgba(255,255,255,0.03); border:1px solid rgba(0,0,0,0.06); color:var(--text); font-size:1rem; cursor:pointer; user-select:none; text-align:center; }
+    .key.function { background: rgba(79,140,255,0.12); color: var(--text); }
+    .key.op { background: var(--accent); color:#fff; font-weight:600; }
+    .key.equals { grid-column: span 2; background: var(--accent-strong); color:#fff; font-weight:700; }
+    .key:active { transform: translateY(1px); }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>수식 계산기</h1>
+    <div class="header">
+      <h1>수식 계산기</h1>
+      <label class="theme-toggle"><input id="themeToggle" type="checkbox" /> 다크 모드</label>
+    </div>
+
     <input id="expr" type="text" placeholder="예: (2+3)*sin(1.5)-sqrt(9)/2" autocomplete="off" />
-    <button onclick="calculate()">계산</button>
+    <div class="display-row">
+      <div style="flex:1"></div>
+    </div>
     <div class="result" id="result"></div>
-    <div class="info">sin, cos, tan, sqrt, pow, log, abs 등 다양한 수학 함수를 지원합니다.</div>
+
+    <div class="keypad" aria-hidden="false">
+      <div class="key function" onclick="insertText('sin(')">sin</div>
+      <div class="key function" onclick="insertText('cos(')">cos</div>
+      <div class="key function" onclick="insertText('tan(')">tan</div>
+      <div class="key op" onclick="insertText('(')">(</div>
+
+      <div class="key" onclick="insertText('7')">7</div>
+      <div class="key" onclick="insertText('8')">8</div>
+      <div class="key" onclick="insertText('9')">9</div>
+      <div class="key op" onclick="insertText(')')">)</div>
+
+      <div class="key" onclick="insertText('4')">4</div>
+      <div class="key" onclick="insertText('5')">5</div>
+      <div class="key" onclick="insertText('6')">6</div>
+      <div class="key op" onclick="insertText('/')">÷</div>
+
+      <div class="key" onclick="insertText('1')">1</div>
+      <div class="key" onclick="insertText('2')">2</div>
+      <div class="key" onclick="insertText('3')">3</div>
+      <div class="key op" onclick="insertText('*')">×</div>
+
+      <div class="key" onclick="insertText('0')">0</div>
+      <div class="key" onclick="insertText('.')">.</div>
+      <div class="key" onclick="delChar()">DEL</div>
+      <div class="key op" onclick="insertText('-')">−</div>
+
+      <div class="key function" onclick="insertText('sqrt(')">√</div>
+      <div class="key function" onclick="insertText('pow(')">pow</div>
+      <div class="key" onclick="clearAll()">C</div>
+      <div class="key equals" onclick="calculate()">=</div>
+    </div>
+
+    <div class="info">sin, cos, tan, sqrt, pow, log, abs 등 지원 — 키보드 입력도 가능, 버튼으로 클릭하세요.</div>
   </div>
+
   <script>
-    // 안전하게 수식 평가 (math.js 없이 직접 구현)
+    // 테마 초기화
+    const toggle = document.getElementById('themeToggle');
+    function applyTheme(isDark) {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      toggle.checked = isDark;
+    }
+    // 기본: OS 선호 색상 감지
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark);
+    toggle.addEventListener('change', () => applyTheme(toggle.checked));
+
+    // 입력 보조 함수: 커서 위치에 텍스트 삽입
+    function insertText(text) {
+      const el = document.getElementById('expr');
+      const start = el.selectionStart || 0;
+      const end = el.selectionEnd || 0;
+      const value = el.value;
+      el.value = value.slice(0, start) + text + value.slice(end);
+      const pos = start + text.length;
+      el.setSelectionRange(pos, pos);
+      el.focus();
+    }
+    function delChar() {
+      const el = document.getElementById('expr');
+      const start = el.selectionStart || 0;
+      const end = el.selectionEnd || 0;
+      if (start === end && start > 0) {
+        el.value = el.value.slice(0, start - 1) + el.value.slice(end);
+        el.setSelectionRange(start - 1, start - 1);
+      } else if (start !== end) {
+        el.value = el.value.slice(0, start) + el.value.slice(end);
+        el.setSelectionRange(start, start);
+      }
+      el.focus();
+    }
+    function clearAll() {
+      document.getElementById('expr').value = '';
+      document.getElementById('result').textContent = '';
+      document.getElementById('expr').focus();
+    }
+
+    // 안전한 수식 평가
     function calculate() {
-      const input = document.getElementById('expr').value;
+      const inputEl = document.getElementById('expr');
+      const input = inputEl.value.trim();
+      if (!input) {
+        document.getElementById('result').innerHTML = '';
+        return;
+      }
       let expr = input
         .replace(/\b(sin|cos|tan|sqrt|abs|log|pow|exp|floor|ceil|round|min|max)\b/gi, 'Math.$1')
         .replace(/π|pi/gi, 'Math.PI')
-        .replace(/e/gi, 'Math.E');
+        .replace(/\be\b/gi, 'Math.E');
+
       try {
-        // eval은 위험하므로, 입력값을 최대한 math 함수로만 제한
-        if (/[^-+*/().,0-9 MathsincoqrtabslgpowexfloorceilroundminmaxPIE]/i.test(expr)) {
-          throw new Error('허용되지 않은 문자가 있습니다.');
+        // 허용 문자만 남기기 (숫자, 연산자, Math, 함수명, 괄호, 소수점, 공백)
+        if (/[^0-9+\-*/()., MathPIEa-zA-Z_]/.test(expr)) {
+          throw new Error('허용되지 않은 문자가 포함되어 있습니다.');
         }
+        // 평가
         const result = Function('return ' + expr)();
         if (typeof result === 'number' && isFinite(result)) {
-          document.getElementById('result').innerHTML = result;
+          document.getElementById('result').textContent = result;
         } else {
           document.getElementById('result').innerHTML = '<span class="error">계산 불가</span>';
         }
@@ -47,6 +164,8 @@
         document.getElementById('result').innerHTML = '<span class="error">오류: ' + e.message + '</span>';
       }
     }
+
+    // Enter 키로 계산
     document.getElementById('expr').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') calculate();
     });

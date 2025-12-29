@@ -23,9 +23,9 @@
       --accent-strong: #60a5fa;
       --danger: #ff7a93;
     }
-    html,body { height:100%; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-    .container { max-width: 420px; margin: 48px auto; background: var(--card); border-radius: 12px; box-shadow: 0 8px 30px rgba(2,6,23,0.4); padding: 20px; }
+    html,body { height:100%; overflow:hidden; }
+    body { display:flex; align-items:center; justify-content:center; padding:20px; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+    .container { max-width: 420px; width:100%; max-height: calc(100vh - 40px); margin: 0; background: var(--card); border-radius: 12px; box-shadow: 0 8px 30px rgba(2,6,23,0.4); padding: 20px; overflow:auto; }
     .header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     h1 { margin:0; font-size:1.25rem; color:var(--text); }
     .theme-toggle { display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--muted); }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>복잡한 수식 계산기</title>
+  <title>윤석열이 문재인걸 이재명황히 안철수와 한동훈 계산기</title>
   <style>
     :root {
       --bg: #f4f6fb;
@@ -43,13 +43,19 @@
     .key.equals { grid-column: span 2; background: var(--accent-strong); color:#fff; font-weight:700; }
     .key:active { transform: translateY(1px); }
 
+    .container.off { opacity: 0.65; }
+    .key.disabled { pointer-events: none; opacity: 0.45; }
+
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>수식 계산기</h1>
-      <label class="theme-toggle"><input id="themeToggle" type="checkbox" /> 다크 모드</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="powerBtn" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); background:var(--accent); color:#fff; cursor:pointer;">ON</button>
+        <label class="theme-toggle"><input id="themeToggle" type="checkbox" /> 다크 모드</label>
+      </div>
     </div>
 
     <input id="expr" type="text" placeholder="예: (2+3)*sin(1.5)-sqrt(9)/2" autocomplete="off" />
@@ -90,7 +96,10 @@
       <div class="key equals" onclick="calculate()">=</div>
     </div>
 
-    <div class="info">sin, cos, tan, sqrt, pow, log, abs 등 지원 — 키보드 입력도 가능, 버튼으로 클릭하세요.</div>
+    <div style="display:flex; gap:8px; margin-top:10px; align-items:center; justify-content:center;">
+      <button id="angleBtn" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer;">Mode: RAD</button>
+    </div>
+    <div class="info">sin, cos, tan, sqrt, pow, log, ln, fact(!) 등 공학 함수 지원 — 키보드 입력도 가능.</div>
   </div>
 
   <script>
@@ -135,33 +144,63 @@
       document.getElementById('expr').focus();
     }
 
-    // 안전한 수식 평가
-    function calculate() {
+    // 계산기 유틸과 안전한 평가
+    const Calc = (function(){
+      let angleMode = 'rad'; // 'rad' or 'deg'
+      function toRad(x){ return angleMode === 'deg' ? x * Math.PI / 180 : x; }
+      function fromRad(x){ return angleMode === 'deg' ? x * 180 / Math.PI : x; }
+      return {
+        setAngleMode(mode){ angleMode = mode; },
+        sin(x){ return Math.sin(toRad(x)); },
+        cos(x){ return Math.cos(toRad(x)); },
+        tan(x){ return Math.tan(toRad(x)); },
+        asin(x){ return fromRad(Math.asin(x)); },
+        acos(x){ return fromRad(Math.acos(x)); },
+        atan(x){ return fromRad(Math.atan(x)); },
+        sqrt(x){ return Math.sqrt(x); },
+        pow(x,y){ return Math.pow(x,y); },
+        ln(x){ return Math.log(x); },
+        log(x){ return Math.log10 ? Math.log10(x) : Math.log(x)/Math.LN10; },
+        abs(x){ return Math.abs(x); },
+        exp(x){ return Math.exp(x); },
+        floor(x){ return Math.floor(x); },
+        ceil(x){ return Math.ceil(x); },
+        round(x){ return Math.round(x); },
+        min(...a){ return Math.min(...a); },
+        max(...a){ return Math.max(...a); },
+        fact(n){ n = Math.trunc(n); if (n < 0) return NaN; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+      };
+    })();
+
+    function calculate(){
       const inputEl = document.getElementById('expr');
       const input = inputEl.value.trim();
-      if (!input) {
-        document.getElementById('result').innerHTML = '';
-        return;
-      }
+      const resEl = document.getElementById('result');
+      if (!input) { resEl.innerHTML = ''; return; }
+
+      // 함수명 치환: Calc.<fn>
       let expr = input
-        .replace(/\b(sin|cos|tan|sqrt|abs|log|pow|exp|floor|ceil|round|min|max)\b/gi, 'Math.$1')
         .replace(/π|pi/gi, 'Math.PI')
-        .replace(/\be\b/gi, 'Math.E');
+        .replace(/\be\b/gi, 'Math.E')
+        .replace(/\b(sin|cos|tan|asin|acos|atan|sqrt|abs|ln|log|pow|exp|floor|ceil|round|min|max|fact)\b/gi, function(m){ return 'Calc.' + m.toLowerCase(); });
+
+      // '^' 연산자를 '**'로 대체 (지수)
+      expr = expr.replace(/\^/g, '**');
+
+      // 팩토리얼 표기: 후위 '!' 를 Calc.fact(...)로 변환
+      expr = expr.replace(/(\d+|\([^()]+\))!/g, 'Calc.fact($1)');
 
       try {
-        // 허용 문자만 남기기 (숫자, 연산자, Math, 함수명, 괄호, 소수점, 공백)
-        if (/[^0-9+\-*/()., MathPIEa-zA-Z_]/.test(expr)) {
+        // 허용 문자만 남기기: 숫자, 연산자, ., 괄호, 알파벳, 밑줄, 공백, !, ^
+        if (/[^0-9+\-*/().,\s\*\*A-Za-z_<>=%]/.test(expr)) {
           throw new Error('허용되지 않은 문자가 포함되어 있습니다.');
         }
         // 평가
-        const result = Function('return ' + expr)();
-        if (typeof result === 'number' && isFinite(result)) {
-          document.getElementById('result').textContent = result;
-        } else {
-          document.getElementById('result').innerHTML = '<span class="error">계산 불가</span>';
-        }
-      } catch (e) {
-        document.getElementById('result').innerHTML = '<span class="error">오류: ' + e.message + '</span>';
+        const result = Function('return (' + expr + ')')();
+        if (typeof result === 'number' && isFinite(result)) resEl.textContent = result;
+        else resEl.innerHTML = '<span class="error">계산 불가</span>';
+      } catch (e){
+        resEl.innerHTML = '<span class="error">오류: ' + e.message + '</span>';
       }
     }
 
@@ -169,6 +208,33 @@
     document.getElementById('expr').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') calculate();
     });
+
+    // 전원 버튼 동작: 켜기/끄기
+    const powerBtn = document.getElementById('powerBtn');
+    let powerOn = true;
+    function updatePowerUI(){
+      const keys = document.querySelectorAll('.key');
+      const expr = document.getElementById('expr');
+      keys.forEach(k=> k.classList.toggle('disabled', !powerOn));
+      expr.disabled = !powerOn;
+      document.querySelector('.container').classList.toggle('off', !powerOn);
+      powerBtn.textContent = powerOn ? 'ON' : 'OFF';
+      // 결과 초기화 when off
+      if (!powerOn) document.getElementById('result').textContent = '';
+    }
+    powerBtn.addEventListener('click', ()=>{ powerOn = !powerOn; updatePowerUI(); });
+
+    // 각도 모드 토글 (RAD / DEG)
+    const angleBtn = document.getElementById('angleBtn');
+    let angleMode = 'rad';
+    angleBtn.addEventListener('click', ()=>{
+      angleMode = angleMode === 'rad' ? 'deg' : 'rad';
+      angleBtn.textContent = 'Mode: ' + angleMode.toUpperCase();
+      Calc.setAngleMode(angleMode);
+    });
+    // 초기 설정
+    Calc.setAngleMode(angleMode);
+    updatePowerUI();
   </script>
 </body>
 </html>
